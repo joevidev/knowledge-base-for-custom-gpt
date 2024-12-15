@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "knowledge-base-for-custom-gpt-api"
+version = "0.1.0"
+description = "API for querying the knowledge base of CustomGPT"
+authors = ["joevidev"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.109.0"
+uvicorn = "^0.27.0"
+langchain-pinecone = "^0.0.3"
+langchain-openai = "^0.0.5"
+pinecone-client = "^3.0.0"
+pydantic = "^2.0.0"
+python-dotenv = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api" 

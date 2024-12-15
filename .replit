@@ -1,0 +1,11 @@
+language = "python3"
+run = "poetry run python main.py"
+
+[nix]
+channel = "stable-22_11"
+
+[tool.poetry]
+plugins = ["poetry-dotenv-plugin"]
+
+[env]
+POETRY_VIRTUALENVS_IN_PROJECT = "true" 
