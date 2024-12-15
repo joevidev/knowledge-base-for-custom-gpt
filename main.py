@@ -29,6 +29,7 @@ app = FastAPI(
     title="API for Knowledge Base of CustomGPT",
     description="API for querying the knowledge base of CustomGPT",
     version="1.0.0",
+    openapi_url="/openapi.json",
 )
 
 

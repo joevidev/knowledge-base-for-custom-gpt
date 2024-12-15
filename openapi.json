@@ -1,0 +1,242 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Knowledge Base Query API",
+    "description": "API for semantic search over a document knowledge base using Pinecone vector store and OpenAI embeddings. Supports MMR search for diverse results and filename filtering.",
+    "version": "v1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/query": {
+      "post": {
+        "description": "Perform semantic search over documents with optional filename filtering",
+        "operationId": "QueryDocuments",
+        "requestBody": {
+          "description": "Query parameters including search text and optional filters",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              },
+              "example": {
+                "query": "What is machine learning?",
+                "filename": "chapter1.txt",
+                "k": 4,
+                "fetch_k": 20,
+                "lambda_mult": 0.7
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved matching documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication token missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error during query processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "deprecated": false
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Check API and vector store connectivity status",
+        "operationId": "CheckHealth",
+        "responses": {
+          "200": {
+            "description": "System health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "example": {
+                  "status": "healthy",
+                  "vector_store": "connected"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "deprecated": false
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "QueryRequest": {
+        "type": "object",
+        "required": ["query"],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The search query text to find relevant documents",
+            "example": "What is machine learning?"
+          },
+          "filename": {
+            "type": "string",
+            "description": "Optional filename to filter results to a specific document",
+            "example": "chapter1.txt",
+            "nullable": true
+          },
+          "k": {
+            "type": "integer",
+            "description": "Number of results to return in the final response",
+            "default": 4,
+            "minimum": 1,
+            "maximum": 20
+          },
+          "fetch_k": {
+            "type": "integer",
+            "description": "Number of documents to retrieve before applying MMR filtering",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "lambda_mult": {
+            "type": "number",
+            "description": "Controls diversity vs relevance tradeoff (0.0 = max diversity, 1.0 = max relevance)",
+            "default": 0.7,
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "QueryResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Response status",
+            "example": "success"
+          },
+          "query": {
+            "type": "string",
+            "description": "Original search query",
+            "example": "What is machine learning?"
+          },
+          "filename": {
+            "type": "string",
+            "description": "Filename filter used (if any)",
+            "example": "chapter1.txt",
+            "nullable": true
+          },
+          "results": {
+            "type": "array",
+            "description": "Array of matching documents",
+            "items": {
+              "type": "object",
+              "properties": {
+                "content": {
+                  "type": "string",
+                  "description": "Document content snippet"
+                },
+                "metadata": {
+                  "type": "object",
+                  "properties": {
+                    "filename": {
+                      "type": "string",
+                      "description": "Source document filename"
+                    },
+                    "orig_elements": {
+                      "type": "array",
+                      "description": "Original document structure elements",
+                      "items": {
+                        "type": "object"
+                      },
+                      "nullable": true
+                    }
+                  }
+                },
+                "diversity_rank": {
+                  "type": "integer",
+                  "description": "Ranking based on MMR diversity score"
+                }
+              }
+            }
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of results returned"
+          },
+          "diversity_factor": {
+            "type": "number",
+            "description": "Lambda multiplier used for diversity calculation"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Overall API health status",
+            "example": "healthy"
+          },
+          "vector_store": {
+            "type": "string",
+            "description": "Pinecone vector store connection status",
+            "enum": ["connected", "disconnected"]
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "Error message details"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Authentication token required for all endpoints"
+      }
+    }
+  }
+}
