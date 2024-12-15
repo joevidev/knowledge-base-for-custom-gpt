@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: knowledge-base-api
+    runtime: python
+    buildCommand: |
+      curl -sSL https://install.python-poetry.org | python3 - && \
+      poetry config virtualenvs.create false && \
+      poetry install --no-interaction --no-ansi
+    startCommand: poetry run uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: POETRY_VERSION
+        value: 1.7.1
