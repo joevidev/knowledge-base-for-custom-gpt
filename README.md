@@ -22,3 +22,10 @@ API for querying a knowledge base stored in Pinecone using LangChain and FastAPI
 ### Environment Variables
 
 Copy `.env.example` to `.env` and fill in your values:
+
+```
+
+## Authentication
+
+The API uses Bearer Token authentication. You need to include the token in the Authorization header:
+```

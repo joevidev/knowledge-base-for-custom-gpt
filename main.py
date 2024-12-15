@@ -1,16 +1,67 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.security import HTTPBearer
 from pydantic import BaseModel, SecretStr, Field
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
 from pinecone import Pinecone
 import os
 import uvicorn
+from fastapi.responses import JSONResponse
 
 # Configuración de credenciales
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 INDEX_NAME = os.environ.get("PINECONE_INDEX", "english-book")
 NAMESPACE = os.environ.get("PINECONE_NAMESPACE", "book-chapters")
+API_TOKEN = os.environ.get("API_TOKEN")
+
+# Verificar token requerido
+if not API_TOKEN:
+    raise RuntimeError(
+        "API_TOKEN no está configurado. Por favor, configure la variable de entorno API_TOKEN."
+    )
+
+security = HTTPBearer()
+
+
+app = FastAPI(
+    title="API for Knowledge Base of CustomGPT",
+    description="API for querying the knowledge base of CustomGPT",
+    version="1.0.0",
+)
+
+
+@app.middleware("http")
+async def verify_token_middleware(request, call_next):
+    if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
+        return await call_next(request)
+
+    try:
+        auth = request.headers.get("Authorization")
+        if not auth or not auth.startswith("Bearer "):
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication token not provided",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        token = auth.split(" ")[1]
+        if token != API_TOKEN:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid authentication token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        response = await call_next(request)
+        return response
+
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"detail": e.detail},
+            headers=e.headers,
+        )
 
 
 class QueryRequest(BaseModel):
@@ -24,12 +75,6 @@ class QueryRequest(BaseModel):
         description="Diversity of results (0.0 for max diversity, 1.0 for max relevance, 0.7 is a good balance)",
     )
 
-
-app = FastAPI(
-    title="API for Knowledge Base of CustomGPT",
-    description="API for querying the knowledge base of CustomGPT",
-    version="1.0.0",
-)
 
 if PINECONE_API_KEY and OPENAI_API_KEY:
     pc = Pinecone(api_key=PINECONE_API_KEY)
