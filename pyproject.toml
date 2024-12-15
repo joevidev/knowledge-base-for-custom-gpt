@@ -5,7 +5,7 @@ description = "API for querying the knowledge base of CustomGPT"
 authors = ["joevidev"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.10,<3.13"
 fastapi = "^0.109.0"
 uvicorn = "^0.27.0"
 langchain-pinecone = "^0.0.3"
@@ -13,6 +13,7 @@ langchain-openai = "^0.0.5"
 pinecone-client = "^3.0.0"
 pydantic = "^2.0.0"
 python-dotenv = "^1.0.0"
+unstructured = "^0.12.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

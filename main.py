@@ -4,6 +4,7 @@ from pydantic import BaseModel, SecretStr, Field
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
 from pinecone import Pinecone
+from unstructured.staging.base import elements_from_base64_gzipped_json
 import os
 import uvicorn
 from fastapi.responses import JSONResponse
@@ -66,6 +67,9 @@ async def verify_token_middleware(request, call_next):
 
 class QueryRequest(BaseModel):
     query: str = Field(..., description="The query to be performed")
+    filename: str | None = Field(
+        None, description="Optional filename to filter results"
+    )
     k: int = Field(4, description="The number of results to return")
     fetch_k: int = Field(
         20, description="Number of documents to fetch before filtering"
@@ -81,7 +85,7 @@ if PINECONE_API_KEY and OPENAI_API_KEY:
     index = pc.Index(INDEX_NAME)
 
     embeddings = OpenAIEmbeddings(
-        api_key=SecretStr(OPENAI_API_KEY), model="text-embedding-3-large"
+        api_key=SecretStr(OPENAI_API_KEY), model="text-embedding-3-small"
     )
 
     vector_store = PineconeVectorStore(
@@ -92,19 +96,30 @@ if PINECONE_API_KEY and OPENAI_API_KEY:
 @app.post("/query")
 async def query_documents(request: QueryRequest):
     try:
-
         results = vector_store.max_marginal_relevance_search(
             query=request.query,
             k=request.k,
             fetch_k=request.fetch_k,
             lambda_mult=request.lambda_mult,
             namespace=NAMESPACE,
+            filter=(
+                {"filename": {"$eq": request.filename}} if request.filename else None
+            ),
         )
 
         formatted_results = [
             {
                 "content": doc.page_content,
-                "metadata": doc.metadata,
+                "metadata": {
+                    **doc.metadata,
+                    "orig_elements": (
+                        elements_from_base64_gzipped_json(
+                            doc.metadata.get("orig_elements", "")
+                        )
+                        if doc.metadata.get("orig_elements")
+                        else None
+                    ),
+                },
                 "diversity_rank": idx,
             }
             for idx, doc in enumerate(results)
@@ -113,6 +128,7 @@ async def query_documents(request: QueryRequest):
         return {
             "status": "success",
             "query": request.query,
+            "filename": request.filename,
             "results": formatted_results,
             "count": len(formatted_results),
             "diversity_factor": request.lambda_mult,
