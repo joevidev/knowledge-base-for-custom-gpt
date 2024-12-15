@@ -5,7 +5,7 @@ description = "API for querying the knowledge base of CustomGPT"
 authors = ["joevidev"]
 
 [tool.poetry.dependencies]
-python = "^3.10,<3.13"
+python = "^3.9.0,<3.12"
 fastapi = "^0.109.0"
 uvicorn = "^0.27.0"
 langchain-pinecone = "^0.0.3"
