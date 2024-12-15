@@ -35,7 +35,7 @@ app = FastAPI(
 
 @app.middleware("http")
 async def verify_token_middleware(request, call_next):
-    if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
+    if request.url.path in ["/docs", "/redoc", "/openapi.json", "/health"]:
         return await call_next(request)
 
     try:
