@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel, SecretStr, Field
+from pydantic import BaseModel, Field
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
 from pinecone import Pinecone
@@ -86,7 +86,7 @@ if PINECONE_API_KEY and OPENAI_API_KEY:
     index = pc.Index(INDEX_NAME)
 
     embeddings = OpenAIEmbeddings(
-        api_key=SecretStr(OPENAI_API_KEY), model="text-embedding-3-small"
+        api_key=OPENAI_API_KEY, model="text-embedding-3-small"  # type: ignore
     )
 
     vector_store = PineconeVectorStore(
